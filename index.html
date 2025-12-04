@@ -1,0 +1,1457 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>OC萌系复古像素手机模拟器</title>
+  <style>
+    @font-face {
+      font-family: 'FZG_CN-1';
+      src: url('https://cdn.jsdelivr.net/gh/rubyrubyred/test@main/FZG_CN-1.woff2') format('woff2');
+      font-weight: normal;
+      font-style: normal;
+    }
+    :root {
+      /* mimi.html萌系配色方案 */
+      --sweet-pink: #F8C8D7;   /* 主甜粉 */
+      --soft-white: #FFFFFF;   /* 主背景色 */
+      --lace-cream: #FFF5F7;   /* 次要背景/阴影色 */
+      --crystal-pink: #ECA0B0; /* 装饰/按钮默认色 */
+      --muted-grey: #606060;   /* 正文文本颜色 */
+      /* 兼容原有变量 */
+      --primary-pink: var(--sweet-pink);
+      --primary-white: var(--soft-white);
+      --primary-light-pink: var(--lace-cream);
+      --primary-deep-pink: var(--crystal-pink);
+      --aux-brown: var(--crystal-pink);
+      --aux-pink: var(--sweet-pink);
+      --text-dark: var(--muted-grey);
+      --pixel-shadow: 0 4px 0 0 var(--crystal-pink), 0 8px 8px 0 rgba(236, 160, 176, 0.1), 4px 0 0 0 var(--lace-cream), 0 0 0 4px var(--soft-white);
+    }
+    body {
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      background: var(--sweet-pink);
+      font-family: 'FZG_CN-1', Arial, sans-serif !important;
+      color: var(--text-dark);
+      box-sizing: border-box;
+    }
+    .simulator-main {
+      max-width: 390px; /* 调整为更接近真实手机的宽度（iPhone 13/14） */
+      margin: 60px auto 40px auto;
+      background: url('https://cdn.jsdelivr.net/gh/rubyrubyred/img@main/back.png');
+      background-repeat: repeat;
+      background-size: auto;
+      padding: 35px 15px 90px 15px; /* 调整内边距以配合新尺寸 */
+      border-radius: 45px; /* 适当增大圆角以配合新尺寸 */
+      /* 手机边框效果 - 三层粉色边框 */
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15), 0 0 0 7px #FF1493; /* 调整边框大小 */
+      border: 7px solid #FF69B4; /* 调整边框大小 */
+      outline: 7px solid #FFB6C1; /* 调整边框大小 */
+      outline-offset: -7px; /* 调整边框偏移以配合新大小 */
+      position: relative;
+      min-height: 844px; /* 调整为更接近真实手机的高度（iPhone 13/14） */
+      box-sizing: border-box;
+    }
+    /* 手机顶部听筒 */
+    .simulator-main::before {
+      content: '';
+      position: absolute;
+      top: 15px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100px;
+      height: 6px;
+      background: #333;
+      border-radius: 3px;
+    }
+    /* 手机顶部摄像头 */
+    .simulator-main::after {
+      content: '';
+      position: absolute;
+      top: 13px;
+      left: calc(50% + 60px);
+      width: 10px;
+      height: 10px;
+      background: #333;
+      border-radius: 50%;
+    }
+
+    /* 手机状态栏样式 */
+    .status-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 15px;
+      background: var(--soft-white);
+      border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+      margin-bottom: 15px;
+      font-size: 0.9em;
+      color: var(--muted-grey);
+    }
+
+    .status-left, .status-right {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .signal-icon, .wifi-icon, .battery-icon {
+      font-size: 1.1em;
+    }
+
+    .status-time {
+      font-weight: 500;
+      font-size: 0.95em;
+      color: var(--crystal-pink);
+    }
+    .pixel-deco {
+      position: absolute;
+      width: 32px;
+      height: 32px;
+      z-index: 1;
+    }
+    .heart { top: 12px; right: 12px; }
+    .ribbon { top: 12px; left: 12px; }
+    .cake { bottom: 90px; right: 12px; } /* 调整装饰位置 */
+    .pixel-title {
+      font-size: 1.2em;
+      font-weight: bold;
+      color: var(--aux-brown);
+      margin: 0 0 1em 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    /* 新增：欢迎语样式 */
+    .welcome-text {
+      text-align: center;
+      color: var(--aux-pink);
+      font-size: 1.1em;
+      margin: 20px 0 30px 0;
+      font-weight: bold;
+      text-shadow: 1px 1px 0 var(--aux-brown);
+    }
+    .space-between {
+      display: flex;
+      justify-content: space-between;
+    }
+    .pixel-card {
+      background: rgba(255, 255, 255, 0.95);
+      /* 像素化圆角（8px像素风） */
+      border-radius: 8px;
+      padding: 16px;
+      box-shadow: var(--pixel-shadow);
+      /* 像素化边框 */
+      border: 3px solid var(--aux-brown);
+      /* 卡片交互动效 */
+      transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    }
+    .pixel-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 6px 0 0 var(--aux-brown), 0 10px 12px 0 rgba(112, 66, 65, 0.15), 4px 0 0 0 var(--primary-deep-pink), 0 0 0 4px var(--primary-white);
+    }
+    .pixel-input {
+      padding: 8px 12px;
+      /* 像素化输入框边框 */
+      border: 3px solid var(--aux-brown);
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 1em;
+      background: var(--primary-white);
+      color: var(--text-dark);
+      flex: 1;
+      margin-right: 8px;
+      /* 输入框交互动效 */
+      transition: all 0.2s;
+    }
+    .pixel-input:focus {
+      outline: none;
+      border-color: var(--aux-pink);
+      box-shadow: 0 0 0 2px var(--primary-light-pink);
+    }
+    .pixel-btn {
+      padding: 8px 16px;
+      border: 3px solid var(--aux-brown);
+      border-radius: 8px;
+      background: var(--primary-light-pink);
+      color: var(--aux-brown);
+      font-family: inherit;
+      font-size: 1em;
+      cursor: pointer;
+      /* 按钮交互动效 */
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      /* 像素化按钮 */
+      box-shadow: 0 3px 0 0 var(--aux-brown);
+    }
+    .pixel-btn:hover {
+      background: var(--aux-pink);
+      color: var(--primary-white);
+      transform: translateY(-2px);
+      box-shadow: 0 5px 0 0 var(--aux-brown);
+    }
+    .pixel-btn:active {
+      transform: translateY(1px);
+      box-shadow: 0 1px 0 0 var(--aux-brown);
+    }
+    .row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 12px;
+      align-items: center;
+    }
+    .app-grid { 
+      display: flex; 
+      flex-wrap: nowrap; 
+      gap: 12px; /* 减小间距以缩紧app排列 */
+      justify-content: center; 
+      align-items: center;
+      position: absolute;
+      bottom: 70px; /* 调整底部位置 */
+      left: 0;
+      width: 100%;
+      padding: 8px 0; /* 减小内边距 */
+      background: rgba(255, 255, 255, 0.9);
+      border-top: 2px solid var(--aux-brown);
+    }
+    .app-icon-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: auto;
+      cursor: pointer;
+      /* 图标交互动效 */
+      transition: transform 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+    }
+    .app-icon-btn:hover {
+      transform: scale(1.1) rotate(2deg);
+    }
+    /* Emoji图标外方块样式 */
+    .app-icon-img {
+      width: 40px; /* 减小图标尺寸 */
+      height: 40px;
+      margin-bottom: 4px; /* 减小间距 */
+      /* 像素化方块背景 */
+      background: var(--primary-white);
+      border: 3px solid var(--aux-brown);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      /* 图标阴影 */
+      box-shadow: 0 3px 0 0 var(--aux-brown);
+    }
+    /* GIF图标特定样式 */
+    .app-icon-img img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+    }
+    .app-icon-label {
+      font-size: 0.8em; /* 减小字体大小以配合缩紧的排列 */
+      color: var(--aux-brown);
+      text-align: center;
+    }
+    .app-panel { 
+      display: none; 
+      animation: fadein-app 320ms ease-out; 
+      background: transparent; 
+      z-index: 7; 
+      margin-bottom: 16px;
+    }
+    .app-panel.active { 
+      display: block; 
+    }
+    @keyframes fadein-app {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    /* 修改：底部Home键样式 - 固定在最底部 */
+    .bottom-bar {
+      position: absolute;
+      bottom: 20px;
+      left: 0;
+      width: 100%;
+      display: flex;
+      justify-content: center;
+    }
+    .home-btn {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      border: 4px solid var(--aux-brown);
+      background: var(--primary-light-pink);
+      color: var(--aux-brown);
+      font-size: 1.5em;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 0 var(--aux-brown);
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .home-btn:hover {
+      background: var(--aux-pink);
+      color: var(--primary-white);
+      transform: translateY(-3px);
+      box-shadow: 0 6px 0 var(--aux-brown);
+    }
+    .home-btn:active {
+      transform: translateY(1px);
+      box-shadow: 0 2px 0 var(--aux-brown);
+    }
+    /* 经典9键拨号键盘样式 */
+    .dial-pad {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin: 15px 0;
+    }
+    .dial-btn {
+      padding: 15px 0;
+      border: 3px solid var(--aux-brown);
+      border-radius: 8px;
+      background: var(--primary-light-pink);
+      color: var(--aux-brown);
+      font-family: inherit;
+      font-size: 1.2em;
+      cursor: pointer;
+      transition: all 0.2s;
+      box-shadow: 0 3px 0 0 var(--aux-brown);
+    }
+    .dial-btn:hover {
+      background: var(--aux-pink);
+      color: var(--primary-white);
+      transform: translateY(-2px);
+      box-shadow: 0 5px 0 0 var(--aux-brown);
+    }
+    /* 聊天记录样式 */
+    .chat-container {
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 8px;
+      padding: 10px;
+      margin-bottom: 10px;
+      min-height: 200px;
+      max-height: 300px;
+      overflow-y: auto;
+      border: 2px solid var(--aux-brown);
+    }
+    .chat-message {
+      margin-bottom: 8px;
+      max-width: 80%;
+      padding: 8px 12px;
+      border-radius: 18px;
+      clear: both;
+      border: 2px solid var(--aux-brown);
+    }
+    .received {
+      background: var(--primary-pink);
+      color: var(--text-dark);
+      float: left;
+      border-bottom-left-radius: 4px;
+    }
+    .sent {
+      background: var(--primary-deep-pink);
+      color: var(--primary-white);
+      float: right;
+      border-bottom-right-radius: 4px;
+    }
+    .chat-time {
+      font-size: 0.7em;
+      opacity: 0.8;
+      margin-left: 8px;
+    }
+    /* 日历样式优化 - 显示真实日历 */
+    .calendar-date-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .calendar-date-btn {
+      padding: 3px 6px;
+      border: 2px solid var(--aux-brown);
+      border-radius: 6px;
+      background: var(--primary-light-pink);
+      color: var(--aux-brown);
+      font-family: inherit;
+      cursor: pointer;
+      box-shadow: 0 2px 0 0 var(--aux-brown);
+      font-size: 0.8em;
+    }
+    /* 像素风格日历网格 */
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 4px;
+      margin-bottom: 15px;
+    }
+    .calendar-day {
+      text-align: center;
+      padding: 6px 0;
+      font-size: 0.9em;
+      color: var(--aux-brown);
+      font-weight: bold;
+    }
+    .calendar-date {
+      text-align: center;
+      padding: 6px 0;
+      border-radius: 6px;
+      font-size: 0.9em;
+      transition: all 0.2s;
+      border: 2px solid transparent;
+      cursor: pointer;
+    }
+    .calendar-date.today {
+      background: var(--aux-pink);
+      color: var(--primary-white);
+      border-color: var(--aux-brown);
+      font-weight: bold;
+    }
+    .calendar-date.selected {
+      background: var(--primary-light-pink);
+      border-color: var(--aux-brown);
+      font-weight: bold;
+    }
+    .calendar-date.other {
+      opacity: 0.5;
+    }
+    .calendar-date:hover:not(.today):not(.selected) {
+      background: var(--primary-pink);
+      border-color: var(--aux-brown);
+    }
+    /* 新增：日程列表项样式，确保删除按钮固定在右侧 */
+    .calendar-item {
+      display: flex;
+      align-items: center;
+      margin-bottom: 6px;
+      justify-content: space-between;
+    }
+    .calendar-item-text {
+      flex: 1;
+      padding-right: 10px;
+    }
+    .contact-avatar {
+      width: 32px;
+      height: 32px;
+      margin-right: 10px;
+      border: 2px solid var(--aux-brown);
+      border-radius: 6px;
+    }
+    /* 机主头像样式 - 优化尺寸和显示，确保emoji居中 */
+    .profile-avatar {
+      width: 70px;
+      height: 70px;
+      border: 4px solid var(--aux-brown);
+      border-radius: 8px;
+      margin: 0 auto 15px auto;
+      background: var(--primary-pink);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 32px; /* 减小默认头像文字大小 */
+      box-shadow: 0 4px 0 0 var(--aux-brown);
+      object-fit: cover; /* 确保图片正确显示 */
+      line-height: 1; /* 关键：消除行高影响 */
+      text-align: center; /* 确保文字居中 */
+    }
+    /* 设置页面布局优化 */
+    .profile-info {
+      margin: 10px 0;
+      text-align: center;
+    }
+    .profile-label {
+      font-size: 0.9em;
+      color: var(--aux-brown);
+      margin-right: 5px;
+    }
+    .profile-value {
+      font-size: 1em;
+      font-weight: bold;
+      color: var(--aux-pink);
+    }
+    .profile-input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin: 15px 0;
+    }
+    #loading-pixel-heart {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 9999;
+      transition: opacity 0.3s;
+    }
+    /* 像素化滚动条 */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: var(--primary-pink);
+      border-radius: 0;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: var(--primary-deep-pink);
+      border-radius: 0;
+      border: 2px solid var(--aux-brown);
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--aux-pink);
+    }
+    /* 隐藏文件输入框 */
+    .file-input-hidden {
+      display: none;
+    }
+    /* 相册图片1:1展示样式 */
+    .gallery-image-container {
+      width: 100px;
+      height: 100px;
+      border-radius: 8px;
+      border: 2px solid #704241;
+      background: #fff;
+      margin-right: 10px;
+      overflow: hidden;
+    }
+    .gallery-image {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      image-rendering: pixelated;
+    }
+  </style>
+</head>
+<body>
+  <!-- Loading 动画: 像素小爱心逐帧显示 -->
+  <div id="loading-pixel-heart">
+    <canvas class="pixel-heart-frame" width="48" height="48"></canvas>
+  </div>
+
+  <div class="simulator-main">
+    <!-- 手机状态栏 -->
+    <div class="status-bar">
+      <div class="status-left">
+        <span class="signal-icon">📶</span>
+        <span class="wifi-icon">📡</span>
+      </div>
+      <div class="status-center">
+        <span id="clock" class="status-time">--:--</span>
+      </div>
+      <div class="status-right">
+        <span class="battery-icon">🔋</span>
+      </div>
+    </div>
+
+    <!-- 像素装饰例子（可增删） -->
+    <div class="pixel-deco heart"></div>
+    <div class="pixel-deco ribbon"></div>
+    <div class="pixel-deco cake"></div>
+
+    <!-- 模拟器顶栏 -->
+    <div class="pixel-title space-between" style="margin-bottom: 1.5em;">
+      <span>xxz的手机</span>
+    </div>
+
+    <!-- 新增：欢迎语区域 -->
+    <div id="welcome-message" class="welcome-text"></div>
+
+    <!-- 主界面 - 应用图标网格，默认显示（Emoji+外方块） -->
+    <div id="app-main" class="app-grid" style="display:flex;">
+      <div class="app-icon-btn" onclick="switchApp('phone')" title="电话">
+        <img class="app-icon-img" src="https://cdn.jsdelivr.net/gh/rubyrubyred/img@main/p%20(58).gif" alt="电话">
+        <span class="app-icon-label">电话</span>
+      </div>
+      <div class="app-icon-btn" onclick="switchApp('settings')" title="设置">
+        <img class="app-icon-img" src="https://cdn.jsdelivr.net/gh/rubyrubyred/img@main/p%20(9).gif" alt="设置">
+        <span class="app-icon-label">设置</span>
+      </div>
+      <div class="app-icon-btn" onclick="switchApp('gallery')" title="相册">
+        <img class="app-icon-img" src="https://cdn.jsdelivr.net/gh/rubyrubyred/img@main/p%20(17).gif" alt="相册">
+        <span class="app-icon-label">相册</span>
+      </div>
+      <div class="app-icon-btn" onclick="switchApp('sms')" title="短信">
+        <img class="app-icon-img" src="https://cdn.jsdelivr.net/gh/rubyrubyred/img@main/p%20(18).gif" alt="短信">
+        <span class="app-icon-label">短信</span>
+      </div>
+      <div class="app-icon-btn" onclick="switchApp('contacts')" title="联系人">
+        <img class="app-icon-img" src="https://cdn.jsdelivr.net/gh/rubyrubyred/img@main/p%20(76).gif" alt="联系人">
+        <span class="app-icon-label">联系人</span>
+      </div>
+      <div class="app-icon-btn" onclick="switchApp('calendar')" title="日程表">
+        <img class="app-icon-img" src="https://cdn.jsdelivr.net/gh/rubyrubyred/img@main/p%20(28).gif" alt="日程">
+        <span class="app-icon-label">日程</span>
+      </div>
+    </div>
+
+    <!-- 各应用面板，默认隐藏，选中才显示 -->
+    <div id="app-phone" class="pixel-card app-panel">
+      <div class="pixel-title">电话 <span style="margin-left:9px;">📞</span></div>
+      <div class="row" style="margin-bottom:9px;">
+        <input id="dial-input" class="pixel-input" type="tel" maxlength="15" placeholder="输入号码">
+        <button class="pixel-btn" onclick="simulateCall()">拨打</button>
+      </div>
+      <!-- 经典9键拨号键盘 -->
+      <div class="dial-pad">
+        <button class="dial-btn" onclick="inputDial('1')">1</button>
+        <button class="dial-btn" onclick="inputDial('2')">2</button>
+        <button class="dial-btn" onclick="inputDial('3')">3</button>
+        <button class="dial-btn" onclick="inputDial('4')">4</button>
+        <button class="dial-btn" onclick="inputDial('5')">5</button>
+        <button class="dial-btn" onclick="inputDial('6')">6</button>
+        <button class="dial-btn" onclick="inputDial('7')">7</button>
+        <button class="dial-btn" onclick="inputDial('8')">8</button>
+        <button class="dial-btn" onclick="inputDial('9')">9</button>
+        <button class="dial-btn" onclick="inputDial('*')">*</button>
+        <button class="dial-btn" onclick="inputDial('0')">0</button>
+        <button class="dial-btn" onclick="inputDial('#')">#</button>
+      </div>
+      <button class="pixel-btn" style="width:100%;margin-bottom:10px;" onclick="document.getElementById('dial-input').value = ''">清空号码</button>
+      <div style="margin-top:11px;">
+        <div style="font-size:1.04em;color:var(--aux-brown);font-weight:bold;margin-bottom:4px;">通话记录</div>
+        <ul id="call-history" style="list-style:none;padding-left:0;"></ul>
+      </div>
+    </div>
+    
+    <div id="app-settings" class="pixel-card app-panel">
+      <div class="pixel-title">设置 <span style="margin-left:10px;">🛠️</span></div>
+      <!-- 优化设置页面布局 - 删除了"个人头像"文字 -->
+      <div style="text-align: center; margin-bottom: 15px;">
+        <!-- 机主头像展示 -->
+        <img id="profile-avatar" class="profile-avatar" src="" alt="" onerror="this.onerror=null; this.src='';">
+        <!-- 头像上传按钮 -->
+        <div style="margin-top: 10px;">
+          <input type="file" id="avatar-upload" accept="image/*" class="file-input-hidden" onchange="uploadAvatar()">
+          <button class="pixel-btn" onclick="document.getElementById('avatar-upload').click()">上传头像</button>
+        </div>
+      </div>
+      
+      <!-- 个人信息展示 - 优化布局和文字大小 -->
+      <div class="profile-info">
+        <div style="margin-bottom: 8px;">
+          <span class="profile-label">昵称:</span>
+          <span id="profile-name" class="profile-value">OC机主</span>
+        </div>
+        <div style="margin-bottom: 12px;">
+          <span class="profile-label">签名:</span>
+          <span id="profile-sign" style="color:var(--aux-brown);">像素世界 甜美生活~</span>
+        </div>
+      </div>
+      
+      <!-- 输入框组 - 优化布局 -->
+      <div class="profile-input-group">
+        <input id="input-name" class="pixel-input" type="text" maxlength="8" placeholder="新昵称">
+        <input id="input-sign" class="pixel-input" type="text" maxlength="18" placeholder="新签名">
+        <button class="pixel-btn" onclick="updateProfile()">保存</button>
+      </div>
+      
+
+    </div>
+    
+    <div id="app-gallery" class="pixel-card app-panel">
+      <div class="pixel-title">
+        相册 <span style="margin-left:9px;">📷</span>
+      </div>
+      <div style="margin-bottom:7px;">
+        <input type="file" id="photo-upload" accept="image/*" class="file-input-hidden" onchange="handlePhotoUpload()">
+        <input id="photo-desc" class="pixel-input" type="text" maxlength="14" placeholder="图片说明">
+        <button class="pixel-btn" onclick="document.getElementById('photo-upload').click()">上传图片</button>
+      </div>
+      <ul id="gallery-list" style="list-style:none;padding-left:0;margin:0 0 6px 0;"></ul>
+    </div>
+    
+    <div id="app-sms" class="pixel-card app-panel">
+      <div class="pixel-title">短信 <span style="margin-left:9px;">💌</span></div>
+      <!-- 联系人选择界面 -->
+      <div id="sms-contact-selection" style="display:block;">
+        <div style="margin-bottom:10px;font-weight:bold;color:var(--aux-pink);">选择联系人:</div>
+        <ul id="sms-contacts-list" style="list-style:none;padding-left:0;margin:0 0 5px 0;"></ul>
+      </div>
+      <!-- 聊天记录容器 -->
+      <div id="sms-chat" class="chat-container" style="display:none;"></div>
+      <!-- 聊天输入区域 -->
+      <div id="sms-input-area" style="margin-top:9px;display:none;">
+        <input id="sms-input" class="pixel-input" maxlength="35" type="text" placeholder="新短信内容" style="width:100%;margin-bottom:8px;">
+        <div style="display:flex;gap:5px;">
+          <button class="pixel-btn" onclick="sendSMS()">发送</button>
+          <button class="pixel-btn" onclick="backToContactSelection()">返回</button>
+          <!-- 新增测试按钮帮助调试 -->
+          <button class="pixel-btn" onclick="clearSMS()">清空</button>
+        </div>
+      </div>
+    </div>
+    
+    <div id="app-contacts" class="pixel-card app-panel">
+      <div class="pixel-title">联系人 <span style="margin-left:10px;">👩‍🎨</span></div>
+      <ul id="contacts-list" style="list-style:none;padding-left:0;margin:0 0 5px 0;"></ul>
+      <div id="contact-call-history" style="margin-top:12px;"></div>
+    </div>
+    
+    <div id="app-calendar" class="pixel-card app-panel">
+      <div class="pixel-title">日程表 <span style="margin-left:9px;">🗓️</span></div>
+      <div class="calendar-date-bar">
+        <button class="calendar-date-btn" onclick="changeDate(-1)">⏪ 前一天</button>
+        <span id="calendar-date-label"></span>
+        <button class="calendar-date-btn" onclick="changeDate(1)">后一天 ⏩</button>
+      </div>
+      
+      <!-- 新增真实日历显示 -->
+      <div id="calendar-grid" class="calendar-grid"></div>
+      
+      <div id="calendar-list" style="list-style:none;padding-left:2px;"></div>
+      <div class="row" style="margin-top:8px;">
+        <input id="calendar-input" class="pixel-input" maxlength="22" type="text" placeholder="添加日程" style="flex: 1; margin-right: 8px;">
+        <button class="pixel-btn" onclick="addCalendar()">添加</button>
+      </div>
+    </div>
+
+    <!-- 底部Home键 - 固定在最底部 -->
+    <div class="bottom-bar">
+      <button class="home-btn" onclick="switchApp('main')" title="返回主页"><img src="https://cdn.jsdelivr.net/gh/rubyrubyred/img@main/p%20(64).gif" alt="返回主页" style="width: 100%; height: 100%; object-fit: contain;"></button>
+    </div>
+  </div>
+
+  <script>
+    // ========== 像素爱心加载动画 ===========
+    const frameData = [
+      [ "0000011001100000"+"0001111111110000"+"0011111111111000"+"0111111111111100"+"0111111111111100"+"0111111111111100"+"0011111111111000"+"0001111111110000"+"0000111111100000"+"0000011111000000"+"0000001110000000"+"0000000100000000"+"0000000000000000"+"0000000000000000"+"0000000000000000"+"0000000000000000", ],
+      [ "0000011001100000"+"0001111111110000"+"0011111111111000"+"0111111111111100"+"1111111111111110"+"1111111111111110"+"0111111111111100"+"0011111111111000"+"0001111111110000"+"0000111111100000"+"0000011111000000"+"0000001110000000"+"0000000100000000"+"0000000000000000"+"0000000000000000"+"0000000000000000", ],
+      [ "0000011001100000"+"0001111111110000"+"0011111111111000"+"1111111111111110"+"1111111111111110"+"1111111111111110"+"1111111111111110"+"0111111111111100"+"0011111111111000"+"0001111111110000"+"0000111111100000"+"0000011111000000"+"0000001110000000"+"0000000100000000"+"0000000000000000"+"0000000000000000", ],
+      [ "0000011001100000"+"0011111111111000"+"1111111111111110"+"1111111111111110"+"1111111111111110"+"1111111111111110"+"1111111111111110"+"1111111111111110"+"0111111111111100"+"0011111111111000"+"0001111111110000"+"0000111111100000"+"0000011111000000"+"0000001110000000"+"0000000100000000"+"0000000000000000", ]
+    ];
+    const pixelColor = "#FF69B4";
+    let curFrame = 0;
+    let loadingTimer = null;
+    function drawPixelHeart(frameIdx) {
+      const cvs = document.querySelector('.pixel-heart-frame');
+      const ctx = cvs.getContext('2d');
+      ctx.clearRect(0, 0, 48, 48);
+      let d = frameData[frameIdx%frameData.length][0];
+      let step = 3;
+      for(let y=0; y<16; ++y) {
+        for(let x=0; x<16; ++x) {
+          if(d[y*16+x]==='1') {
+            ctx.fillStyle = pixelColor;
+            ctx.fillRect(x*step, y*step, step, step);
+          }
+        }
+      }
+    }
+    function showLoadingHeart() {
+      curFrame = 0;
+      let step = 0;
+      drawPixelHeart(0);
+      loadingTimer = setInterval(()=>{
+        drawPixelHeart(curFrame);
+        curFrame = (curFrame+1)%frameData.length;
+        step++;
+        if(step>10) {
+          document.getElementById('loading-pixel-heart').style.opacity = '0';
+          setTimeout(()=>document.getElementById('loading-pixel-heart').style.display='none',350);
+          clearInterval(loadingTimer);
+        }
+      }, 165);
+    }
+    window.addEventListener('DOMContentLoaded', showLoadingHeart);
+
+    // ========== 状态栏时间刷新 ============
+    function updateClock() {
+      var t = new Date();
+      var clock = document.getElementById('clock');
+      if(clock) {
+        var h = t.getHours().toString().padStart(2, '0');
+        var m = t.getMinutes().toString().padStart(2, '0');
+        clock.textContent = h + ":" + m;
+      }
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    // ========== 新增：更新欢迎语 ============
+    function updateWelcomeMessage() {
+      var name = localStorage.getItem('profile-name') || 'xxz';
+      var welcomeEl = document.getElementById('welcome-message');
+      if (welcomeEl) {
+        welcomeEl.textContent = `欢迎回来，${name}！✨`;
+      }
+    }
+
+    // ========== 应用切换 ===========
+    function switchApp(app) {
+      // 1. 隐藏所有app-panel
+      document.querySelectorAll('.app-panel').forEach(function(i){i.classList.remove('active');});
+      // 2. 显示主界面和隐藏面板
+      var mainGrid = document.getElementById('app-main');
+      var welcomeMsg = document.getElementById('welcome-message');
+      
+      if(app === 'main'){
+        mainGrid.style.display = 'flex';
+        welcomeMsg.style.display = 'block'; // 显示欢迎语
+        updateWelcomeMessage(); // 更新欢迎语
+      }else{
+        mainGrid.style.display = 'none';
+        welcomeMsg.style.display = 'none'; // 隐藏欢迎语
+        var target = document.getElementById('app-' + app);
+        if(target) target.classList.add('active');
+        // 切换到日历应用时重新渲染日历
+        if(app === 'calendar') {
+          renderCalendarGrid();
+        }
+      }
+    }
+    // 默认打开即显示主界面
+    switchApp('main');
+
+    // ========== 电话应用（完善通话记录） ===========
+    function inputDial(d) {
+      var inp = document.getElementById('dial-input');
+      if(inp) inp.value = (inp.value + d).slice(0,15);
+    }
+    
+    function simulateCall() {
+      var inp = document.getElementById('dial-input');
+      if(!inp) return;
+      var num = inp.value.trim();
+      if(!num) {
+        alert('请输入号码哦~😘');
+        return;
+      }
+      var list = [];
+      try { list = JSON.parse(localStorage.getItem('call-history')||'[]'); } catch(e) { list = []; }
+      var now = new Date();
+      // 随机生成1-60秒的通话时长
+      var durationSeconds = Math.floor(Math.random() * 60) + 1;
+      var duration = {
+        minutes: Math.floor(durationSeconds / 60),
+        seconds: durationSeconds % 60
+      };
+      // 完善通话记录信息：精确到时分秒，添加通话类型和时长
+      list.unshift({
+        num: num, 
+        time: now.toLocaleString(), 
+        contact: getContactName(num),
+        callTime: now.toTimeString().substr(0,8), // 精确到秒
+        date: now.toLocaleDateString(),
+        type: "呼出", // 通话类型：呼出/呼入
+        duration: duration
+      });
+      localStorage.setItem('call-history', JSON.stringify(list));
+      showCallHistory();
+      inp.value = '';
+    }
+    
+    function showCallHistory() {
+      var list = [];
+      try { list = JSON.parse(localStorage.getItem('call-history')||'[]'); } catch(e) { list = []; }
+      var box = document.getElementById('call-history');
+      if(!box) return;
+      box.innerHTML = '';
+      
+      // 如果没有通话记录，显示可爱的提示
+      if(list.length === 0) {
+        box.innerHTML = '<li style="text-align: center; color: #FF6B9E; font-size: 0.9em;">还没有通话记录呢~📱</li>';
+        return;
+      }
+      
+      for(var i=0; i<Math.min(list.length, 10); ++i) { // 显示最多10条记录
+        var rec = list[i];
+        var contactHTML = rec.contact ? '<b style="color:#FF6B9E;">' + rec.contact + '</b>' : '<span style="color:#704241;">' + rec.num + '</span>';
+        
+        // 格式化通话时长
+        var durationText = '';
+        if(rec.duration) {
+          var minutes = rec.duration.minutes;
+          var seconds = rec.duration.seconds;
+          if(minutes > 0) {
+            durationText = `${minutes}分${seconds}秒`;
+          } else {
+            durationText = `${seconds}秒`;
+          }
+        } else {
+          // 为旧记录添加默认时长
+          durationText = `${Math.floor(Math.random() * 5) + 1}分${Math.floor(Math.random() * 60)}秒`;
+        }
+        
+        // 显示精确的通话时间
+        var timeStr = rec.callTime || (rec.time && rec.time.length >= 16 ? rec.time.substr(11,8) : '');
+        
+        // 选择可爱的emoji
+        var callEmoji = rec.type === '呼出' ? '📞' : '📲';
+        var cuteEmoji = ['✨', '🌟', '💫', '⭐'][Math.floor(Math.random() * 4)];
+        
+        box.innerHTML += '<li><span style="font-size:1.1em;margin-right:6px;color:#FF6B9E;">' + callEmoji + '</span> ' +
+          contactHTML + ' ' + cuteEmoji + '<br/>' +
+          '<span style="font-size:0.8em;color:#704241;margin-left:22px;">通话时长：' + durationText + ' | ' + rec.type + '</span>' +
+          ' <span style="font-size:0.8em;color:#704241;float:right;margin-top:-18px;">⏰ ' + timeStr + '</span></li>';
+      }
+    }
+    showCallHistory();
+
+    // ========== 设置应用（修复头像上传和显示问题） ==========
+    // 上传自定义头像 - 修复显示问题
+    function uploadAvatar() {
+      const fileInput = document.getElementById('avatar-upload');
+      const file = fileInput.files[0];
+      if (!file) return;
+      
+      // 验证图片是正方形
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const img = new Image();
+        img.onload = function() {
+          if (img.width !== img.height) {
+            alert('请上传正方形的图片作为头像！');
+            return;
+          }
+          
+          // 将图片转为base64存储
+          localStorage.setItem('custom-avatar', e.target.result);
+          // 立即更新头像显示
+          const avatarEl = document.getElementById('profile-avatar');
+          avatarEl.src = e.target.result;
+          avatarEl.textContent = ''; // 清空emoji
+          // 清除默认头像的存储
+          localStorage.removeItem('profile-avatar');
+          fileInput.value = ''; // 重置文件输入
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+    
+
+    
+    function updateProfile() {
+      var name = document.getElementById('input-name').value.trim();
+      var sign = document.getElementById('input-sign').value.trim();
+      if(name) localStorage.setItem('profile-name', name);
+      if(sign) localStorage.setItem('profile-sign', sign);
+      showProfile();
+      updateWelcomeMessage(); // 更新欢迎语
+    }
+    
+    // 修复头像显示逻辑
+    function showProfile() {
+      var name = localStorage.getItem('profile-name') || 'xxz';
+      var sign = localStorage.getItem('profile-sign') || 'Meow战队队长';
+      var avatar = localStorage.getItem('profile-avatar') || '';
+      var customAvatar = localStorage.getItem('custom-avatar');
+      
+      var pn = document.getElementById('profile-name');
+      var ps = document.getElementById('profile-sign');
+      var pa = document.getElementById('profile-avatar');
+      var inpN = document.getElementById('input-name');
+      var inpS = document.getElementById('input-sign');
+      
+      if(pn) pn.textContent = name;
+      if(ps) ps.textContent = sign;
+      
+      // 优先显示自定义头像 - 修复显示逻辑
+      if (customAvatar) {
+        pa.src = customAvatar;
+        pa.textContent = '';
+        pa.style.display = 'flex'; // 确保显示
+      } else {
+        pa.src = '';
+        pa.textContent = '';
+        pa.style.display = 'flex'; // 确保显示
+      }
+      
+      if(inpN) inpN.value = '';
+      if(inpS) inpS.value = '';
+    }
+    showProfile();
+    updateWelcomeMessage(); // 初始化欢迎语
+
+    // ========== 相册应用（改为本地上传，1:1展示） ===========
+    function handlePhotoUpload() {
+      const fileInput = document.getElementById('photo-upload');
+      const file = fileInput.files[0];
+      if (!file) return;
+      
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const desc = document.getElementById('photo-desc').value.trim();
+        var list = [];
+        try { list = JSON.parse(localStorage.getItem('gallery')||'[]'); } catch(e) { list = []; }
+        
+        // 存储图片的base64数据和描述
+        list.unshift({ 
+          data: e.target.result, 
+          desc: desc,
+          uploadTime: new Date().toLocaleString()
+        });
+        
+        localStorage.setItem('gallery', JSON.stringify(list));
+        showGallery();
+        document.getElementById('photo-desc').value = '';
+        fileInput.value = ''; // 重置文件输入
+      };
+      reader.readAsDataURL(file);
+    }
+    
+    function showGallery() {
+      var list = [];
+      try { list = JSON.parse(localStorage.getItem('gallery')||'[]'); } catch(e) { list = []; }
+      var box = document.getElementById('gallery-list');
+      if(!box) return;
+      box.innerHTML='';
+      for(let i=0; i<Math.min(list.length,6); ++i) {
+        const p = list[i];
+        box.innerHTML += 
+          `<li style="display:flex;align-items:center;margin-bottom:10px;">
+            <div class="gallery-image-container">
+              <img src="${p.data}" class="gallery-image" alt="相册图片">
+            </div>
+            <div style="flex:1;">
+              <div style="font-size:0.97em;color:#FF6B9E;">${p.desc || '无描述'}</div>
+              <div style="font-size:0.8em;color:#704241;margin-top:4px;">${p.uploadTime || ''}</div>
+              <button class="pixel-btn" style="padding:2px 10px;font-size:0.88em;margin-top:4px" onclick="deletePhoto(${i})">删除</button>
+            </div>
+          </li>`;
+      }
+    }
+    
+    function deletePhoto(idx) {
+      var list = [];
+      try { list = JSON.parse(localStorage.getItem('gallery')||'[]'); } catch(e) { list = []; }
+      if(idx>=0 && idx<list.length) list.splice(idx,1);
+      localStorage.setItem('gallery', JSON.stringify(list));
+      showGallery();
+    }
+    showGallery();
+
+    // ========== 短信应用（支持多联系人独立对话） ===========
+    // 当前选中的联系人
+    var currentContact = null;
+    
+    // 显示联系人选择列表
+    function showSMSContacts() {
+      var contacts = getContacts();
+      var box = document.getElementById('sms-contacts-list');
+      if(!box) return;
+      box.innerHTML = '';
+      contacts.forEach(function(c,i){
+        box.innerHTML += 
+          `<li style="display:flex;align-items:center;margin-bottom:8px;"><img src="${c.avatar}" class="contact-avatar" alt="头像"><span style="font-weight:bold;color:#FF6B9E;">${c.name}</span><span style="color:#704241;margin-left:8px;font-size:0.97em;">${c.num}</span>
+          <button class="pixel-btn" style="padding:2px 11px;font-size:0.89em;margin-left:auto;" onclick="selectSMSContact('${c.num}','${c.name}')">聊天</button></li>`;
+      });
+    }
+    
+    // 选择联系人开始聊天
+    function selectSMSContact(num, name) {
+      currentContact = { num: num, name: name };
+      
+      // 显示聊天界面
+      document.getElementById('sms-contact-selection').style.display = 'none';
+      document.getElementById('sms-chat').style.display = 'block';
+      document.getElementById('sms-input-area').style.display = 'flex';
+      
+      // 更新标题显示当前联系人
+      document.querySelector('#app-sms .pixel-title').innerHTML = `与 ${name} 聊天 💌`;
+      
+      // 显示与该联系人的聊天记录
+      showSMS();
+    }
+    
+    // 返回联系人选择界面
+    function backToContactSelection() {
+      currentContact = null;
+      
+      // 显示联系人选择界面
+      document.getElementById('sms-contact-selection').style.display = 'block';
+      document.getElementById('sms-chat').style.display = 'none';
+      document.getElementById('sms-input-area').style.display = 'none';
+      
+      // 恢复原标题
+      document.querySelector('#app-sms .pixel-title').innerHTML = `短信 <span style="margin-left:9px;">💌</span>`;
+    }
+    
+    // 修复短信发送功能
+    function sendSMS() {
+      if(!currentContact) {
+        alert('请先选择联系人！');
+        return;
+      }
+      
+      var inp = document.getElementById('sms-input');
+      var content = inp.value.trim();
+      if(!content) {
+        alert('请输入短信内容！');
+        return;
+      }
+      
+      // 获取该联系人的短信记录
+      var smsKey = `sms-list-${currentContact.num}`;
+      var smsList = JSON.parse(localStorage.getItem(smsKey) || '[]');
+      
+      // 获取当前时间
+      const currentTime = new Date().toLocaleTimeString().substr(0,8);
+      
+      // 添加用户发送的消息
+      smsList.push({ 
+        content: content, 
+        time: currentTime,
+        isSent: true 
+      });
+      
+      // 立即保存并更新界面
+      localStorage.setItem(smsKey, JSON.stringify(smsList));
+      showSMS();
+      inp.value = '';
+      
+      // 模拟对方回复
+      setTimeout(() => {
+        // 为不同联系人设置不同的回复内容
+        const replies = {
+          '11111': ["你和兔纸和好没？", "到底和好没？", "别毕业我。", "6", "来三角洲？", "这周末连麦ob兔纸我给你上舰长。", "1111111", "测试一下你有没有毕业我"],
+          '22222': ["外卖垃圾收一下", "别天天兔纸英明了，说了烦", "？", "哦", "打游戏声音小点", "兔纸英明四抓你看了没"],
+          '33333': ["退钱", "舰长礼怎么还不发货", "tx99", "7799", "你去298142问吧", "枯阅99", "tzym❤️wzx", "你前夫又上瓜格了"],
+          // 默认回复
+          'default': ["你好呀😜", "收到啦～", "像素手机真好玩！", "下次再聊～", "好的好的👌"]
+        };
+        
+        // 选择对应联系人的回复
+        const contactReplies = replies[currentContact.num] || replies.default;
+        const replyTime = new Date().toLocaleTimeString().substr(0,8);
+        
+        smsList.push({
+          content: contactReplies[Math.floor(Math.random() * contactReplies.length)],
+          time: replyTime,
+          isSent: false
+        });
+        
+        localStorage.setItem(smsKey, JSON.stringify(smsList));
+        showSMS();
+      }, 800);
+    }
+    
+    // 清空短信记录（调试用）
+    function clearSMS() {
+      if(!currentContact) {
+        alert('请先选择联系人！');
+        return;
+      }
+      
+      var smsKey = `sms-list-${currentContact.num}`;
+      localStorage.removeItem(smsKey);
+      showSMS();
+    }
+    
+    // 修复短信显示逻辑
+    function showSMS() {
+      if(!currentContact) return;
+      
+      var smsKey = `sms-list-${currentContact.num}`;
+      var smsList = JSON.parse(localStorage.getItem(smsKey) || '[]');
+      var chatBox = document.getElementById('sms-chat');
+      if(!chatBox) return;
+      
+      // 清空聊天框
+      chatBox.innerHTML = '';
+      
+      // 如果没有消息，显示提示
+      if(smsList.length === 0) {
+        chatBox.innerHTML = '<div style="text-align: center; color: #FF6B9E; margin-top: 50px; font-size: 0.9em;">还没有和' + currentContact.name + '的聊天记录呢～📱</div>';
+        chatBox.scrollTop = chatBox.scrollHeight;
+        return;
+      }
+      
+      // 显示最近10条消息
+      const recentMessages = smsList.slice(-10);
+      recentMessages.forEach(function(s) {
+        const messageClass = s.isSent ? 'sent' : 'received';
+        const sender = s.isSent ? '我' : currentContact.name;
+        chatBox.innerHTML += `
+          <div class="chat-message ${messageClass}">
+            <strong>${sender}:</strong> ${s.content}
+            <span class="chat-time">${s.time || ''}</span>
+          </div>
+        `;
+      });
+      
+      // 强制滚动到底部
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
+    
+    // 初始化显示短信联系人列表
+    showSMSContacts();
+
+    // ========== 联系人应用 ===========
+    function getContacts() {
+      return [
+        { name: "失效药", num: "11111", avatar: "data:image/svg+xml;utf8,<svg width='38' height='38' xmlns='http://www.w3.org/2000/svg'><ellipse cx='19' cy='20' rx='13' ry='14' fill='%23FFE6F2' stroke='%23704241' stroke-width='3'/><ellipse cx='12' cy='19' rx='2.2' ry='4' fill='%23FFC8DD'/><ellipse cx='26' cy='19' rx='2.2' ry='4' fill='%23FFC8DD'/><ellipse cx='19' cy='25' rx='4' ry='3' fill='%23FF6B9E'/></svg>" },
+        { name: "狄斯", num: "22222", avatar: "data:image/svg+xml;utf8,<svg width='38' height='38' xmlns='http://www.w3.org/2000/svg'><ellipse cx='19' cy='23' rx='10' ry='12' fill='%23FFC8DD' stroke='%23704241' stroke-width='2.4'/><rect x='14' y='6' width='3' height='12' rx='1.1' fill='%23FFE6F2'/><rect x='21' y='6' width='3' height='12' rx='1.1' fill='%23FFE6F2'/></svg>" },
+        { name: "扣1家产复活", num: "33333", avatar: "data:image/svg+xml;utf8,<svg width='38' height='38' xmlns='http://www.w3.org/2000/svg'><ellipse cx='19' cy='20' rx='12' ry='13' fill='%23FFC8DD' stroke='%23704241' stroke-width='2.8'/><ellipse cx='13' cy='19' rx='2.4' ry='4' fill='%23FFE6F2'/><ellipse cx='25' cy='19' rx='2.4' ry='4' fill='%23FFE6F2'/><ellipse cx='19' cy='25' rx='4' ry='3' fill='%23FF8EAF'/></svg>" },
+      ];
+    }
+    
+    function showContacts() {
+      var contacts = getContacts();
+      var box = document.getElementById('contacts-list');
+      if(!box) return;
+      box.innerHTML = '';
+      contacts.forEach(function(c,i){
+        box.innerHTML += 
+          `<li style="display:flex;align-items:center;margin-bottom:8px;"><img src="${c.avatar}" class="contact-avatar" alt="头像"><span style="font-weight:bold;color:#FF6B9E;">${c.name}</span><span style="color:#704241;margin-left:8px;font-size:0.97em;">${c.num}</span>
+          <button class="pixel-btn" style="padding:2px 11px;font-size:0.89em;margin-left:auto;" onclick="callContact('${c.num}','${c.name}')">通话</button></li>`;
+      });
+    }
+    
+    function getContactName(num) {
+      var contacts = getContacts();
+      var c = contacts.find(c=>c.num===num);
+      return c ? c.name : '';
+    }
+    
+    function callContact(num, name) {
+      // 从联系人拨打时也生成带时长的通话记录
+      var list = [];
+      try { list = JSON.parse(localStorage.getItem('call-history')||'[]'); } catch(e) { list = []; }
+      var now = new Date();
+      
+      // 随机生成1-60秒的通话时长
+      var durationSeconds = Math.floor(Math.random() * 60) + 1;
+      var duration = {
+        minutes: Math.floor(durationSeconds / 60),
+        seconds: durationSeconds % 60
+      };
+      
+      // 添加通话记录
+      list.unshift({
+        num: num, 
+        time: now.toLocaleString(), 
+        contact: name,
+        callTime: now.toTimeString().substr(0,8), // 精确到秒
+        date: now.toLocaleDateString(),
+        type: "呼出", // 通话类型：呼出
+        duration: duration
+      });
+      
+      localStorage.setItem('call-history', JSON.stringify(list));
+      
+      // 显示萌系提示
+      alert(`已拨打 ${name} 的电话~📞\n通话时长：${duration.minutes}分${duration.seconds}秒✨`);
+      
+      // 如果当前在电话应用，更新通话记录显示
+      if (document.getElementById('app-phone').style.display === 'block') {
+        showCallHistory();
+      }
+    }
+    
+    function showContactHistory(num, name) {
+      var list = [];
+      try { list = JSON.parse(localStorage.getItem('call-history')||'[]'); } catch(e) { list = []; }
+      var box = document.getElementById('contact-call-history');
+      if(!box) return;
+      
+      // 获取该联系人的所有通话记录
+      var contactCalls = list.filter(rec=>rec.num===num);
+      
+      // 如果没有通话记录，显示可爱提示
+      if (contactCalls.length === 0) {
+        box.innerHTML = `<div style="margin-bottom:4px;font-size:1.05em;color:#FF6B9E;">${name} 的通话记录</div>
+        <div style="text-align: center; color: #FFC8DD; font-size: 0.9em;">还没有和${name}的通话记录呢~📱</div>`;
+        return;
+      }
+      
+      // 格式化显示通话记录
+      var callsHtml = contactCalls.map(rec=>{
+        // 格式化通话时长
+        var durationText = '';
+        if(rec.duration) {
+          var minutes = rec.duration.minutes;
+          var seconds = rec.duration.seconds;
+          if(minutes > 0) {
+            durationText = `${minutes}分${seconds}秒`;
+          } else {
+            durationText = `${seconds}秒`;
+          }
+        } else {
+          // 为旧记录添加默认时长
+          durationText = `${Math.floor(Math.random() * 5) + 1}分${Math.floor(Math.random() * 60)}秒`;
+        }
+        
+        // 选择可爱的emoji
+        var callEmoji = rec.type === '呼出' ? '📞' : '📲';
+        var cuteEmoji = ['✨', '🌟', '💫', '⭐'][Math.floor(Math.random() * 4)];
+        
+        return `<li style="margin-bottom:4px;">
+          <span style="color:#FFC8DD;font-size:1.1em;">${callEmoji}</span> 
+          <span style="color:#5A3B38;">${rec.num}</span> 
+          <span style="font-size:0.85em;color:#FF6B9E;margin-left:8px;">${cuteEmoji} ${durationText}</span>
+          <span style="font-size:0.85em;color:#704241;margin-left:8px;">[${rec.type || '呼出'}]</span>
+          <span style="float:right;font-size:0.93em;color:#704241;">⏰ ${rec.callTime || (rec.time && rec.time.length>=16 ? rec.time.substr(11,8):'')}</span>
+        </li>`;
+      }).join('');
+      
+      box.innerHTML = `<div style="margin-bottom:4px;font-size:1.05em;color:#FF6B9E;">${name} 的通话记录</div><ul style="list-style:none;padding-left:0;">${callsHtml}</ul>`;
+    }
+    showContacts();
+
+    // ========== 日程表应用（添加日期选中标识） ===========
+    let calendarDayTS = (()=>{
+      let now = new Date();
+      now.setHours(0,0,0,0);
+      return now.getTime();
+    })();
+    
+    // 修复日历点击事件的语法错误
+    function renderCalendarGrid() {
+      const now = new Date(calendarDayTS);
+      const selectedDate = new Date(calendarDayTS);
+      const year = now.getFullYear();
+      const month = now.getMonth();
+      const day = now.getDate();
+      
+      // 获取当月第一天是星期几
+      const firstDay = new Date(year, month, 1).getDay();
+      // 获取当月天数
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+      // 获取今日日期
+      const today = new Date();
+      const isCurrentMonth = today.getMonth() === month && today.getFullYear() === year;
+      
+      let html = '';
+      // 星期标题
+      const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
+      weekdays.forEach(wd => {
+        html += `<div class="calendar-day">${wd}</div>`;
+      });
+      
+      // 上个月的最后几天 - 修复语法错误
+      const lastMonthDays = new Date(year, month, 0).getDate();
+      for (let i = firstDay - 1; i >= 0; i--) {
+        html += `<div class="calendar-date other" onclick="selectCalendarDate(${year}, ${month - 1}, ${lastMonthDays - i})">${lastMonthDays - i}</div>`;
+      }
+      
+      // 当月天数（添加点击事件和选中样式）
+      for (let i = 1; i <= daysInMonth; i++) {
+        const isToday = isCurrentMonth && i === today.getDate();
+        const isSelected = i === day;
+        let className = 'calendar-date';
+        if (isToday) className += ' today';
+        if (isSelected && !isToday) className += ' selected';
+        
+        html += `<div class="${className}" onclick="selectCalendarDate(${year}, ${month}, ${i})">${i}</div>`;
+      }
+      
+      // 下个月的开头几天
+      const totalCells = 42; // 6行7列
+      const remaining = totalCells - (firstDay + daysInMonth);
+      for (let i = 1; i <= remaining; i++) {
+        html += `<div class="calendar-date other" onclick="selectCalendarDate(${year}, ${month + 1}, ${i})">${i}</div>`;
+      }
+      
+      document.getElementById('calendar-grid').innerHTML = html;
+    }
+    
+    // 选择日历日期
+    function selectCalendarDate(year, month, day) {
+      const selectedDate = new Date(year, month, day);
+      selectedDate.setHours(0, 0, 0, 0);
+      calendarDayTS = selectedDate.getTime();
+      updateCalendarDate();
+      showCalendar();
+      renderCalendarGrid(); // 重新渲染以显示选中状态
+    }
+    
+    function updateCalendarDate() {
+      var d = new Date(calendarDayTS);
+      document.getElementById('calendar-date-label').textContent = `${d.getFullYear()}-${('0'+(d.getMonth()+1)).slice(-2)}-${('0'+d.getDate()).slice(-2)}`;
+    }
+    
+    // 修改：优化日程列表显示，确保删除按钮固定在右侧
+    function showCalendar() {
+      var d = new Date(calendarDayTS);
+      var key = 'calendar-'+d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();
+      var list = [];
+      try { list = JSON.parse(localStorage.getItem(key)||'[]'); } catch(e) { list = []; }
+      var box = document.getElementById('calendar-list');
+      if(!box) return;
+      box.innerHTML='';
+      for(let i=0;i<list.length;++i){
+        box.innerHTML += `<div class="calendar-item">
+          <div class="calendar-item-text">
+            <span style="color:#FF6B9E;">★</span> <span>${list[i]}</span>
+          </div>
+          <button class="pixel-btn" style="padding:2px 8px;font-size:0.88em;" onclick="deleteCalendar(${i})">删除</button>
+        </div>`;
+      }
+    }
+    
+    function addCalendar() {
+      var inp = document.getElementById('calendar-input');
+      var v = inp.value.trim();
+      if(!v) return;
+      var d = new Date(calendarDayTS);
+      var key = 'calendar-'+d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();
+      var list = [];
+      try { list = JSON.parse(localStorage.getItem(key)||'[]'); } catch(e) { list = []; }
+      list.push(v);
+      localStorage.setItem(key, JSON.stringify(list));
+      inp.value = '';
+      showCalendar();
+    }
+    
+    function deleteCalendar(idx) {
+      var d = new Date(calendarDayTS);
+      var key = 'calendar-'+d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();
+      var list = [];
+      try { list = JSON.parse(localStorage.getItem(key)||'[]'); } catch(e) { list = []; }
+      list.splice(idx,1);
+      localStorage.setItem(key, JSON.stringify(list));
+      showCalendar();
+    }
+    
+    function changeDate(dlt) {
+      calendarDayTS += dlt*24*60*60*1000;
+      updateCalendarDate();
+      showCalendar();
+      renderCalendarGrid(); // 切换日期时重新渲染日历
+    }
+    
+    // 初始化12月4日至7日的默认日程
+    function initDefaultCalendar() {
+      // 检查是否已经初始化过
+      if (localStorage.getItem('calendar-initialized')) {
+        return;
+      }
+      
+      const events = ["刷抖音", "给兔皇瓜条点赞", "ob兔皇比赛", "学数模电", "在嘉立创下单", "看吐絮姐wb", "看wb访客记录"];
+      const dates = [4, 5, 6, 7]; // 12月4日至7日
+      
+      // 随机打乱事件顺序
+      const shuffledEvents = events.sort(() => Math.random() - 0.5);
+      
+      // 为每个日期分配事件，每天1-2个
+      dates.forEach((date, dateIndex) => {
+        const key = `calendar-2024-12-${String(date).padStart(2, '0')}`;
+        let dayEvents = [];
+        
+        // 每天分配1-2个事件
+        const eventCount = Math.floor(Math.random() * 2) + 1;
+        for (let i = 0; i < eventCount; i++) {
+          if (shuffledEvents.length > 0) {
+            dayEvents.push(shuffledEvents.pop());
+          }
+        }
+        
+        localStorage.setItem(key, JSON.stringify(dayEvents));
+      });
+      
+      // 标记为已初始化
+      localStorage.setItem('calendar-initialized', 'true');
+    }
+    
+    // 执行初始化
+    initDefaultCalendar();
+    
+    updateCalendarDate();
+    showCalendar();
+    renderCalendarGrid(); // 初始化渲染日历
+  </script>
+</body>
+</html>
